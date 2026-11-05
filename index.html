@@ -164,7 +164,7 @@
                 <div class="inline-flex bg-emerald-500/20 text-emerald-400 p-3 rounded-2xl mb-3">
                     <i class="fa-solid fa-circle-check text-2xl"></i>
                 </div>
-                <h2 class="text-2xl font-bold text-white mb-2">¡Sorteo Completado con Éto!</h2>
+                <h2 class="text-2xl font-bold text-white mb-2">¡Sorteo Completado con Éxito!</h2>
                 <p class="text-slate-400 text-sm max-w-md mx-auto mb-6">
                     Cada participante debe abrir su tarjeta secreta individualmente sin que nadie más mire.
                 </p>
@@ -201,10 +201,10 @@
                                     </button>
                                 </template>
                                 <template x-if="result.revealed">
-                                    <div class="bg-slate-800/80 border border-emerald-500/30 rounded-xl p-3 text-center">
-                                        <span class="text-xs text-slate-400 block mb-1">Le regalas a:</span>
-                                        <span class="text-lg font-bold text-emerald-400" x-text="result.receiver.name"></span>
-                                    </div>
+                                    <button @click="openRevealModal(result)" class="w-full bg-slate-800/80 hover:bg-slate-700 border border-emerald-500/30 rounded-xl p-3 text-center transition">
+                                        <span class="text-xs text-slate-400 block mb-1">Le regalas a (Pulsa para ver):</span>
+                                        <span class="text-lg font-bold text-emerald-400">••••••••</span>
+                                    </button>
                                 </template>
                             </div>
                         </div>
