@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sorteo de Amigo Invisible</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/canvas-confetti/1.6.0/confetti.browser.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Outfit', sans-serif; }
+        [x-cloak] { display: none !important; }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between selection:bg-rose-500 selection:text-white" x-data="amigoInvisible()">
+
+    <!-- Header -->
+    <header class="bg-slate-800/80 backdrop-blur-md border-b border-slate-700/50 sticky top-0 z-50 py-4 px-6">
+        <div class="max-w-5xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="bg-gradient-to-tr from-rose-500 to-amber-500 p-2.5 rounded-xl shadow-lg shadow-rose-500/20">
+                    <i class="fa-solid fa-gift text-white text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold bg-gradient-to-r from-rose-400 to-amber-300 bg-clip-text text-transparent">Amigo Invisible</h1>
+                    <p class="text-xs text-slate-400">Sorteos mágicos y sin spoilers</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button @click="resetAll()" class="text-xs bg-slate-700 hover:bg-slate-600 text-slate-300 px-3 py-1.5 rounded-lg transition flex items-center space-x-1.5">
+                    <i class="fa-solid fa-rotate-right"></i>
+                    <span class="hidden sm:inline">Reiniciar</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-4xl w-full mx-auto p-4 sm:p-6 my-auto flex-grow">
+        
+        <!-- PASO 1: Configuración y Participantes -->
+        <div x-show="step === 1" x-transition.opacity class="space-y-6">
+            <div class="bg-slate-800/50 border border-slate-700/60 rounded-2xl p-6 shadow-xl">
+                <h2 class="text-lg font-semibold text-rose-300 mb-4 flex items-center space-x-2">
+                    <i class="fa-solid fa-users"></i>
+                    <span>1. Añade a los participantes</span>
+                </h2>
+                
+                <form @submit.prevent="addParticipant" class="flex gap-2 mb-4">
+                    <div class="relative flex-grow">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
+                            <i class="fa-solid fa-user"></i>
+                        </span>
+                        <input type="text" x-model="newName" placeholder="Nombre del participante..." 
+                            class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-4 py-3 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-rose-500 transition">
+                    </div>
+                    <div class="relative w-1/3 sm:w-48">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
+                            <i class="fa-solid fa-envelope"></i>
+                        </span>
+                        <input type="email" x-model="newEmail" placeholder="Correo (opcional)" 
+                            class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-4 py-3 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-rose-500 transition">
+                    </div>
+                    <button type="submit" class="bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white px-5 py-3 rounded-xl font-medium transition shadow-lg shadow-rose-500/25 flex items-center justify-center">
+                        <i class="fa-solid fa-plus sm:mr-2"></i>
+                        <span class="hidden sm:inline">Añadir</span>
+                    </button>
+                </form>
+
+                <!-- Lista de Participantes -->
+                <div class="space-y-2 max-h-60 overflow-y-auto pr-1">
+                    <template x-for="(p, index) in participants" :key="p.id">
+                        <div class="flex items-center justify-between bg-slate-900/60 border border-slate-800 px-4 py-3 rounded-xl">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-8 h-8 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold text-sm">
+                                    <span x-text="p.name.charAt(0).toUpperCase()"></span>
+                                </div>
+                                <div>
+                                    <span class="font-medium text-slate-200" x-text="p.name"></span>
+                                    <span class="text-xs text-slate-400 block" x-text="p.email || 'Sin correo'"></span>
+                                </div>
+                            </div>
+                            <button @click="removeParticipant(p.id)" class="text-slate-500 hover:text-rose-400 p-2 transition">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </template>
+                    <div x-show="participants.length === 0" class="text-center py-8 text-slate-500 border border-dashed border-slate-800 rounded-xl">
+                        <i class="fa-solid fa-user-group text-2xl mb-2"></i>
+                        <p>Aún no hay participantes. ¡Agrega al menos 3!</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Opciones y Restricciones -->
+            <div class="bg-slate-800/50 border border-slate-700/60 rounded-2xl p-6 shadow-xl" x-show="participants.length > 1">
+                <h2 class="text-lg font-semibold text-amber-300 mb-4 flex items-center space-x-2">
+                    <i class="fa-solid fa-sliders"></i>
+                    <span>2. Detalles del sorteo</span>
+                </h2>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1.5">PRESUPUESTO / CONDICIONES</label>
+                        <input type="text" x-model="rules" placeholder="Ej: Máximo 20€, Regalo gracioso..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-500 transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1.5">FECHA DEL EVENTO</label>
+                        <input type="date" x-model="eventDate" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition">
+                    </div>
+                </div>
+
+                <!-- Exclusiones -->
+                <div class="border-t border-slate-700/50 pt-4">
+                    <div class="flex justify-between items-center mb-3">
+                        <span class="text-sm font-medium text-slate-300">Exclusiones (Quién NO debe regalar a quién)</span>
+                        <button @click="addExclusion" class="text-xs text-amber-400 hover:text-amber-300 flex items-center space-x-1">
+                            <i class="fa-solid fa-plus"></i> <span>Añadir regla</span>
+                        </button>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <template x-for="(exc, index) in exclusions" :key="index">
+                            <div class="flex items-center space-x-2">
+                                <select x-model="exc.from" class="w-1/2 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-200">
+                                    <option value="">Seleccionar...</option>
+                                    <template x-for="p in participants" :key="p.id">
+                                        <option :value="p.id" x-text="p.name"></option>
+                                    </template>
+                                </select>
+                                <span class="text-slate-500 text-xs">NO regala a</span>
+                                <select x-model="exc.to" class="w-1/2 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-200">
+                                    <option value="">Seleccionar...</option>
+                                    <template x-for="p in participants" :key="p.id">
+                                        <option :value="p.id" x-text="p.name"></option>
+                                    </template>
+                                </select>
+                                <button @click="removeExclusion(index)" class="text-slate-500 hover:text-rose-400 p-2">
+                                    <i class="fa-solid x-trash fa-xmark"></i>
+                                </button>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botón Generar -->
+            <div class="flex justify-end">
+                <button @click="generateDraw" :disabled="participants.length < 3 || isGenerating" 
+                    class="w-full sm:w-auto bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-600 hover:to-rose-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold px-8 py-4 rounded-2xl shadow-xl shadow-amber-500/20 transition flex items-center justify-center space-x-2 text-lg">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <span x-text="isGenerating ? 'Mezclando sombreros...' : '¡Realizar Sorteo!'"></span>
+                </button>
+            </div>
+        </div>
+
+        <!-- PASO 2: Resultados y Revelación -->
+        <div x-show="step === 2" x-transition.opacity class="space-y-6">
+            <div class="bg-slate-800/50 border border-slate-700/60 rounded-2xl p-6 text-center shadow-xl">
+                <div class="inline-flex bg-emerald-500/20 text-emerald-400 p-3 rounded-2xl mb-3">
+                    <i class="fa-solid fa-circle-check text-2xl"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-white mb-2">¡Sorteo Completado con Éto!</h2>
+                <p class="text-slate-400 text-sm max-w-md mx-auto mb-6">
+                    Cada participante debe abrir su tarjeta secreta individualmente sin que nadie más mire.
+                </p>
+
+                <!-- Info extra -->
+                <div class="flex flex-wrap justify-center gap-4 text-xs text-slate-400 bg-slate-900/50 py-3 px-4 rounded-xl max-w-lg mx-auto mb-6">
+                    <span x-show="rules"><i class="fa-solid fa-circle-info text-amber-400 mr-1"></i> <span x-text="rules"></span></span>
+                    <span x-show="eventDate"><i class="fa-solid fa-calendar text-rose-400 mr-1"></i> <span x-text="eventDate"></span></span>
+                </div>
+
+                <!-- Grid de Participantes para Revelar -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-left">
+                    <template x-for="result in results" :key="result.giver.id">
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between transition hover:border-slate-700">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center space-x-2.5">
+                                    <div class="w-9 h-9 rounded-full bg-slate-800 text-slate-300 flex items-center justify-center font-bold">
+                                        <span x-text="result.giver.name.charAt(0).toUpperCase()"></span>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-semibold text-slate-200" x-text="result.giver.name"></h3>
+                                        <span class="text-xs text-slate-500">Participante</span>
+                                    </div>
+                                </div>
+                                <span x-show="result.revealed" class="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full">
+                                    Revelado
+                                </span>
+                            </div>
+
+                            <div class="mt-2">
+                                <template x-if="!result.revealed">
+                                    <button @click="openRevealModal(result)" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 py-2.5 px-4 rounded-xl font-medium text-sm transition flex items-center justify-center space-x-2 border border-slate-700">
+                                        <p><i class="fa-solid fa-lock text-amber-400 mr-1.5"></i> Ver mi amigo</p>
+                                    </button>
+                                </template>
+                                <template x-if="result.revealed">
+                                    <div class="bg-slate-800/80 border border-emerald-500/30 rounded-xl p-3 text-center">
+                                        <span class="text-xs text-slate-400 block mb-1">Le regalas a:</span>
+                                        <span class="text-lg font-bold text-emerald-400" x-text="result.receiver.name"></span>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <div class="flex justify-between">
+                <button @click="step = 1" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-5 py-2.5 rounded-xl text-sm transition">
+                    <i class="fa-solid fa-arrow-left mr-2"></i> Modificar Sorteo
+                </button>
+                <button @click="resetAll()" class="bg-rose-600/20 text-rose-400 hover:bg-rose-600/30 px-5 py-2.5 rounded-xl text-sm transition">
+                    Nuevo Sorteo
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- MODAL DE REVELACIÓN SEGURA -->
+    <div x-show="revealModalOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+        <div class="bg-slate-800 border border-slate-700 rounded-3xl max-w-md w-full p-6 text-center shadow-2xl relative" @click.outside="closeRevealModal">
+            
+            <div class="w-16 h-16 bg-rose-500/20 text-rose-400 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4 shadow-inner">
+                <i class="fa-solid fa-gift"></i>
+            </div>
+            
+            <h3 class="text-xl font-bold text-white mb-1">Turno de <span class="text-rose-400" x-text="currentReveal?.giver.name"></span></h3>
+            <p class="text-sm text-slate-400 mb-6">Asegúrate de que nadie más esté mirando la pantalla.</p>
+
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 mb-6">
+                <template x-if="!showSecret">
+                    <div class="py-6">
+                        <p class="text-sm text-slate-400 mb-4">Pulsa el botón para descubrir a quién te ha tocado regalar.</p>
+                        <button @click="revealSecret()" class="bg-gradient-to-r from-rose-500 to-amber-500 hover:from-rose-600 hover:to-amber-600 text-white font-medium px-6 py-3 rounded-xl shadow-lg transition">
+                            <i class="fa-solid fa-eye mr-2"></i> Revelar mi Amigo Invisible
+                        </button>
+                    </div>
+                </template>
+
+                <template x-if="showSecret">
+                    <div class="py-4 animate-pulse">
+                        <span class="text-xs uppercase tracking-widest text-slate-500 font-semibold block mb-2">Tu amigo invisible es</span>
+                        <div class="text-3xl font-extrabold text-amber-300 mb-2" x-text="currentReveal?.receiver.name"></div>
+                        <p class="text-xs text-slate-400" x-show="currentReveal?.receiver.email">
+                            <i class="fa-solid fa-envelope mr-1"></i> <span x-text="currentReveal?.receiver.email"></span>
+                        </p>
+                    </div>
+                </template>
+            </div>
+
+            <button @click="closeRevealModal" class="w-full bg-slate-700 hover:bg-slate-600 text-slate-200 font-medium py-3 rounded-xl transition">
+                Entendido, ocultar
+            </button>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="text-center py-6 text-xs text-slate-500 border-t border-slate-800">
+        <p>Organiza tu Amigo Invisible de forma rápida, privada y sin complicaciones.</p>
+    </footer>
+
+    <!-- Lógica de la aplicación con Alpine.js -->
+    <script>
+        function amigoInvisible() {
+            return {
+                step: 1,
+                newName: '',
+                newEmail: '',
+                rules: '',
+                eventDate: '',
+                participants: [
+                    { id: 1, name: 'Ana', email: 'ana@example.com' },
+                    { id: 2, name: 'Carlos', email: 'carlos@example.com' },
+                    { id: 3, name: 'Elena', email: 'elena@example.com' },
+                    { id: 4, name: 'David', email: 'david@example.com' }
+                ],
+                exclusions: [],
+                results: [],
+                isGenerating: false,
+                revealModalOpen: false,
+                currentReveal: null,
+                showSecret: false,
+
+                addParticipant() {
+                    if (!this.newName.trim()) return;
+                    this.participants.push({
+                        id: Date.now(),
+                        name: this.newName.trim(),
+                        email: this.newEmail.trim()
+                    });
+                    this.newName = '';
+                    this.newEmail = '';
+                },
+
+                removeParticipant(id) {
+                    this.participants = this.participants.filter(p => p.id !== id);
+                    this.exclusions = this.exclusions.filter(e => e.from !== id && e.to !== id);
+                },
+
+                addExclusion() {
+                    this.exclusions.push({ from: '', to: '' });
+                },
+
+                removeExclusion(index) {
+                    this.exclusions.splice(index, 1);
+                },
+
+                generateDraw() {
+                    if (this.participants.length < 3) return;
+                    this.isGenerating = true;
+
+                    setTimeout(() => {
+                        let success = false;
+                        let attempts = 0;
+                        let givers = [...this.participants];
+                        let receivers = [...this.participants];
+
+                        while (!success && attempts < 1000) {
+                            attempts++;
+                            // Barajar receptores
+                            receivers.sort(() => Math.random() - 0.5);
+                            
+                            let valid = true;
+                            for (let i = 0; i < givers.length; i++) {
+                                let giver = givers[i];
+                                let receiver = receivers[i];
+
+                                // Nadie se regala a sí mismo
+                                if (giver.id === receiver.id) {
+                                    valid = false;
+                                    break;
+                                }
+
+                                // Comprobar exclusiones
+                                let excluded = this.exclusions.some(exc => exc.from == giver.id && exc.to == receiver.id);
+                                if (excluded) {
+                                    valid = false;
+                                    break;
+                                }
+                            }
+
+                            if (valid) {
+                                success = true;
+                            }
+                        }
+
+                        if (success) {
+                            this.results = givers.map((giver, i) => ({
+                                giver: giver,
+                                receiver: receivers[i],
+                                revealed: false
+                            }));
+                            this.step = 2;
+                            confetti({
+                                particleCount: 100,
+                                spread: 70,
+                                origin: { y: 0.6 }
+                            });
+                        } else {
+                            alert('No se pudo encontrar una combinatoria válida con las exclusiones actuales. Intenta relajar las restricciones.');
+                        }
+                        this.isGenerating = false;
+                    }, 600);
+                },
+
+                openRevealModal(result) {
+                    this.currentReveal = result;
+                    this.showSecret = false;
+                    this.revealModalOpen = true;
+                },
+
+                revealSecret() {
+                    this.showSecret = true;
+                    if (this.currentReveal) {
+                        this.currentReveal.revealed = true;
+                    }
+                },
+
+                closeRevealModal() {
+                    this.revealModalOpen = false;
+                    this.currentReveal = null;
+                    this.showSecret = false;
+                },
+
+                resetAll() {
+                    if (confirm('¿Estás seguro de reiniciar todo el sorteo?')) {
+                        this.step = 1;
+                        this.participants = [];
+                        this.exclusions = [];
+                        this.results = [];
+                        this.rules = '';
+                        this.eventDate = '';
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>
